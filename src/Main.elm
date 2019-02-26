@@ -3,121 +3,82 @@ module Main exposing (main)
 import Browser
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
-import Parser exposing (..)
+import Parser exposing ((|.), (|=), Parser, backtrackable, float, int, oneOf, run, succeed, symbol)
 
 
 view : () -> Html msg
 view model =
-    div [] [ text <| Debug.toString <| run duration "P4Y6M4DT12H30M5S" ]
+    div []
+        [ div [] [ text <| Debug.toString <| run duration "P4Y6M4DT12H30M5S" ]
+        , div [] [ text <| Debug.toString <| run duration "P5D" ]
+        , div [] [ text <| Debug.toString <| run duration "P5DT5M" ]
+        , div [] [ text <| Debug.toString <| run duration "P" ]
+        , div [] [ text <| Debug.toString <| run duration "Pabcd" ]
+        , div [] [ text <| Debug.toString <| run duration "P0W" ]
+        ]
 
 
 type alias Duration =
-    { years : Float
-    , months : Float
-    , weeks : Float
-    , days : Float
-    , hours : Float
-    , minutes : Float
+    { years : Int
+    , months : Int
+    , weeks : Int
+    , days : Int
+    , hours : Int
+    , minutes : Int
     , seconds : Float
     }
 
 
 duration : Parser Duration
 duration =
-    succeed Duration
-        |. symbol "P"
-        |= years
-        |= months
-        |= weeks
-        |= days
-        |. symbol "T"
-        |= hours
-        |= minutes
-        |= seconds
+    oneOf
+        [ (succeed Duration
+            |. symbol "P"
+            |= intParser "Y"
+            |= intParser "M"
+            |= intParser "W"
+            |= intParser "D"
+            |. symbol "T"
+            |= intParser "H"
+            |= intParser "M"
+            |= floatParser "S"
+          )
+            |> backtrackable
+        , succeed Duration
+            |. symbol "P"
+            |= intParser "Y"
+            |= intParser "M"
+            |= intParser "W"
+            |= intParser "D"
+            |= succeed 0
+            |= succeed 0
+            |= succeed 0
+        ]
 
 
-years : Parser Float
-years =
+intParser : String -> Parser Int
+intParser label =
     oneOf
         [ (succeed identity
-            |= float
-            |. symbol "Y"
+            |= int
+            |. symbol label
           )
             |> backtrackable
         , succeed 0
         ]
 
 
-months : Parser Float
-months =
+floatParser : String -> Parser Float
+floatParser label =
     oneOf
         [ (succeed identity
             |= float
-            |. symbol "M"
+            |. symbol label
           )
             |> backtrackable
         , succeed 0
         ]
 
-
-weeks : Parser Float
-weeks =
-    oneOf
-        [ (succeed identity
-            |= float
-            |. symbol "W"
-          )
-            |> backtrackable
-        , succeed 0
-        ]
-
-
-days : Parser Float
-days =
-    oneOf
-        [ (succeed identity
-            |= float
-            |. symbol "D"
-          )
-            |> backtrackable
-        , succeed 0
-        ]
-
-
-hours : Parser Float
-hours =
-    oneOf
-        [ (succeed identity
-            |= float
-            |. symbol "H"
-          )
-            |> backtrackable
-        , succeed 0
-        ]
-
-
-minutes : Parser Float
-minutes =
-    oneOf
-        [ (succeed identity
-            |= float
-            |. symbol "M"
-          )
-            |> backtrackable
-        , succeed 0
-        ]
-
-
-seconds : Parser Float
-seconds =
-    oneOf
-        [ (succeed identity
-            |= float
-            |. symbol "S"
-          )
-            |> backtrackable
-        , succeed 0
-        ]
 
 
 
