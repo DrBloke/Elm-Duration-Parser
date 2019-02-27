@@ -48,28 +48,19 @@ type alias Duration =
 
 duration : Parser Duration
 duration =
-    succeed identity
+    succeed (\y m w d t -> DurationWithMaybes y m w d t.hours t.minutes t.seconds)
         |. symbol "P"
+        |= intParser "Y"
+        |= intParser "M"
+        |= intParser "W"
+        |= intParser "D"
         |= oneOf
-            [ (succeed DurationWithMaybes
-                |= intParser "Y"
-                |= intParser "M"
-                |= intParser "W"
-                |= intParser "D"
+            [ succeed (\h m s -> { hours = h, minutes = m, seconds = s })
                 |. symbol "T"
                 |= intParser "H"
                 |= intParser "M"
                 |= floatParser "S"
-              )
-                |> backtrackable
-            , succeed DurationWithMaybes
-                |= intParser "Y"
-                |= intParser "M"
-                |= intParser "W"
-                |= intParser "D"
-                |= succeed Nothing
-                |= succeed Nothing
-                |= succeed Nothing
+            , succeed { hours = Nothing, minutes = Nothing, seconds = Nothing }
             ]
         |. end
         |> andThen toDuration
