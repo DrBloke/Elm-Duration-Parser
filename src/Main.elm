@@ -3,8 +3,7 @@ module Main exposing (main)
 import Browser
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
-import Parser exposing ((|.), (|=), Parser, backtrackable, float, int, oneOf, run, succeed, problem, symbol, andThen, end)
-
+import Parser exposing ((|.), (|=), Parser, andThen, backtrackable, end, float, int, oneOf, problem, run, succeed, symbol)
 
 
 view : () -> Html msg
@@ -24,6 +23,7 @@ view model =
         , div [] [ text <| "5D5W" ++ " -- " ++ (Debug.toString <| run duration "5D5W") ]
         ]
 
+
 type alias DurationWithMaybes =
     { years : Maybe Int
     , months : Maybe Int
@@ -33,6 +33,7 @@ type alias DurationWithMaybes =
     , minutes : Maybe Int
     , seconds : Maybe Float
     }
+
 
 type alias Duration =
     { years : Int
@@ -47,52 +48,64 @@ type alias Duration =
 
 duration : Parser Duration
 duration =
-  succeed identity
+    succeed identity
         |. symbol "P"
         |= oneOf
-          [ ( succeed DurationWithMaybes
-              |= intParser "Y"
-              |= intParser "M"
-              |= intParser "W"
-              |= intParser "D"
-              |. symbol "T"
-              |= intParser "H"
-              |= intParser "M"
-              |= floatParser "S"
-            )
-              |> backtrackable
-          , succeed DurationWithMaybes
-              |= intParser "Y"
-              |= intParser "M"
-              |= intParser "W"
-              |= intParser "D"
-              |= succeed Nothing
-              |= succeed Nothing
-              |= succeed Nothing
-          ]
+            [ (succeed DurationWithMaybes
+                |= intParser "Y"
+                |= intParser "M"
+                |= intParser "W"
+                |= intParser "D"
+                |. symbol "T"
+                |= intParser "H"
+                |= intParser "M"
+                |= floatParser "S"
+              )
+                |> backtrackable
+            , succeed DurationWithMaybes
+                |= intParser "Y"
+                |= intParser "M"
+                |= intParser "W"
+                |= intParser "D"
+                |= succeed Nothing
+                |= succeed Nothing
+                |= succeed Nothing
+            ]
         |. end
         |> andThen toDuration
 
-toDuration :  DurationWithMaybes -> Parser Duration
+
+toDuration : DurationWithMaybes -> Parser Duration
 toDuration { years, months, weeks, days, hours, minutes, seconds } =
-  if (years == Nothing
-    && months == Nothing
-    && weeks == Nothing
-    && days == Nothing
-    && hours == Nothing
-    && minutes == Nothing
-    && seconds == Nothing ) then
-    problem "Must have at least one value"
-  else
-    succeed
-      { years = Maybe.withDefault 0 years
-      , months = Maybe.withDefault 0 months
-      , weeks = Maybe.withDefault 0 weeks
-      , days = Maybe.withDefault 0 days
-      , hours = Maybe.withDefault 0 hours
-      , minutes = Maybe.withDefault 0 minutes
-      , seconds = Maybe.withDefault 0 seconds
-      }
+    if
+        years
+            == Nothing
+            && months
+            == Nothing
+            && weeks
+            == Nothing
+            && days
+            == Nothing
+            && hours
+            == Nothing
+            && minutes
+            == Nothing
+            && seconds
+            == Nothing
+    then
+        problem "Must have at least one value"
+
+    else
+        succeed
+            { years = Maybe.withDefault 0 years
+            , months = Maybe.withDefault 0 months
+            , weeks = Maybe.withDefault 0 weeks
+            , days = Maybe.withDefault 0 days
+            , hours = Maybe.withDefault 0 hours
+            , minutes = Maybe.withDefault 0 minutes
+            , seconds = Maybe.withDefault 0 seconds
+            }
+
 
 intParser : String -> Parser (Maybe Int)
 intParser label =
@@ -116,7 +129,6 @@ floatParser label =
             |> backtrackable
         , succeed Nothing
         ]
-
 
 
 
